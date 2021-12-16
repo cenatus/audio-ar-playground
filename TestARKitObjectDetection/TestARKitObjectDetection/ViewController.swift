@@ -40,6 +40,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         guard let referenceObjects = ARReferenceObject.referenceObjects(inGroupNamed: "Anchors", bundle: nil) else {
             fatalError("Missing expected asset catalog resources.")
         }
+        print("********************* SETTING REFS \(referenceObjects)")
         configuration.detectionObjects = referenceObjects
         sceneView.session.run(configuration)
     }
