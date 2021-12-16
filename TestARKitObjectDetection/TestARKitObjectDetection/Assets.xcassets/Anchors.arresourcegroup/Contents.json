@@ -1,0 +1,11 @@
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "resources" : [
+    {
+      "filename" : "red_blue_mexican_tile.arobject"
+    }
+  ]
+}
