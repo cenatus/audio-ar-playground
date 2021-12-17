@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		226C78A3276CCBA80073737E /* drone.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 226C78A2276CCBA80073737E /* drone.mp3 */; };
+		226C78A5276CCC430073737E /* piano.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 226C78A4276CCC430073737E /* piano.mp3 */; };
 		22A3842E276A7258000BA9EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A3842D276A7258000BA9EE /* AppDelegate.swift */; };
 		22A38430276A7258000BA9EE /* art.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 22A3842F276A7258000BA9EE /* art.scnassets */; };
 		22A38432276A7258000BA9EE /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A38431276A7258000BA9EE /* ViewController.swift */; };
@@ -37,6 +39,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		226C78A2276CCBA80073737E /* drone.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = drone.mp3; sourceTree = "<group>"; };
+		226C78A4276CCC430073737E /* piano.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = piano.mp3; sourceTree = "<group>"; };
 		22A3842A276A7258000BA9EE /* TestARKitObjectDetection.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TestARKitObjectDetection.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		22A3842D276A7258000BA9EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		22A3842F276A7258000BA9EE /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = art.scnassets; sourceTree = "<group>"; };
@@ -101,6 +105,8 @@
 			isa = PBXGroup;
 			children = (
 				22A3845C276A778D000BA9EE /* guitar.mp3 */,
+				226C78A4276CCC430073737E /* piano.mp3 */,
+				226C78A2276CCBA80073737E /* drone.mp3 */,
 				22A3842D276A7258000BA9EE /* AppDelegate.swift */,
 				22A3842F276A7258000BA9EE /* art.scnassets */,
 				22A38431276A7258000BA9EE /* ViewController.swift */,
@@ -233,6 +239,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				22A3845D276A778D000BA9EE /* guitar.mp3 in Resources */,
+				226C78A3276CCBA80073737E /* drone.mp3 in Resources */,
+				226C78A5276CCC430073737E /* piano.mp3 in Resources */,
 				22A38430276A7258000BA9EE /* art.scnassets in Resources */,
 				22A3843A276A725B000BA9EE /* LaunchScreen.storyboard in Resources */,
 				22A38437276A725B000BA9EE /* Assets.xcassets in Resources */,

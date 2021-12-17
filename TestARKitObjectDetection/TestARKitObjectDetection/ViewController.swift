@@ -13,24 +13,32 @@ class ViewController: UIViewController, ARSCNViewDelegate {
 
     @IBOutlet var sceneView: ARSCNView!
     
-    var audioSource : SCNAudioSource!
-    var objectNode: SCNNode!
-    var playing: Bool = false;
+    
+    var audioSources: [String: SCNAudioSource] = [:]
+    var objectNodes: [String: SCNNode] = [:]
+    var playing: [String: Bool] = [:]
+        
+    let anchorFileMapping = Dictionary(uniqueKeysWithValues: [
+        ("serres_parasite", "guitar"),
+        ("douglas_purity_danger", "drone"),
+        ("morton_being_ecological", "piano")
+    ])
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         sceneView.delegate = self
         sceneView.showsStatistics = true
         
-        objectNode = SCNNode()
-
-        /* Load the audioSource */
-        let url = Bundle.main.url(forResource: "guitar", withExtension: "mp3")!
-        audioSource = SCNAudioSource(url: url)!
-        audioSource.loops = true
-        audioSource.load()
-        
-        
+        for (anchorName, fileName) in anchorFileMapping {
+            let url = Bundle.main.url(forResource: fileName, withExtension: "mp3")!
+            let audioSource = SCNAudioSource(url: url)!
+            audioSource.loops = true
+            audioSource.load()
+            audioSources[anchorName] = audioSource
+            objectNodes[anchorName] = SCNNode()
+            playing[anchorName] = false
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -47,7 +55,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        objectNode.removeAllAudioPlayers()
+        for(_, objectNode) in objectNodes {
+            objectNode.removeAllAudioPlayers()
+        }
         sceneView.session.pause()
     }
 
@@ -55,14 +65,20 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     // Override to create and configure nodes for anchors added to the view's session.
     internal func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        print("********* SEEN ANCHOR \(anchor.name ?? "unnamed")")
-        if(!playing) {
-            playing = true
-            objectNode.removeAllAudioPlayers()
-            objectNode.addAudioPlayer(SCNAudioPlayer(source: audioSource!))
-            node.addChildNode(objectNode)
-            let action = SCNAction.playAudio(audioSource, waitForCompletion: false)
-            objectNode.runAction(action)
+        let name = anchor.name!
+        print("********* SEEN ANCHOR \(name)")
+        if let objectNode = objectNodes[name] {
+            if(!playing[name]!) {
+                playing[name] = true
+                let audioSource = audioSources[name]!
+                objectNode.removeAllAudioPlayers()
+                objectNode.addAudioPlayer(SCNAudioPlayer(source: audioSource))
+                node.addChildNode(objectNode)
+                let action = SCNAction.playAudio(audioSource, waitForCompletion: false)
+                objectNode.runAction(action)
+            }
+        } else {
+            print("No sound registered for anchor \(name)")
         }
     }
     
