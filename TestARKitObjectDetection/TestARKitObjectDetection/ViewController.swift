@@ -29,7 +29,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         sceneView.delegate = self
         sceneView.showsStatistics = true
-        
+        sceneView.audioEnvironmentNode.distanceAttenuationParameters.referenceDistance = 0.2
+        sceneView.audioEnvironmentNode.distanceAttenuationParameters.maximumDistance = 1.5
+        sceneView.audioEnvironmentNode.reverbParameters.enable = true
+        sceneView.audioEnvironmentNode.reverbParameters.level = 6
+        sceneView.audioEnvironmentNode.reverbParameters.loadFactoryReverbPreset(AVAudioUnitReverbPreset.plate)
+        sceneView.audioEnvironmentNode.reverbBlend = 0.5
+
         for (anchorName, fileName) in anchorFileMapping {
             let url = Bundle.main.url(forResource: fileName, withExtension: "mp3")!
             let file = try! AVAudioFile(forReading: url)
