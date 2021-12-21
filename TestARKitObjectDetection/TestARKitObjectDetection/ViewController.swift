@@ -14,7 +14,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     @IBOutlet var sceneView: ARSCNView!
     
     
-    var audioSources: [String: SCNAudioSource] = [:]
+    var playerNodes: [String: AVAudioPlayerNode] = [:]
     var objectNodes: [String: SCNNode] = [:]
     var playing: [String: Bool] = [:]
         
@@ -32,10 +32,29 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         for (anchorName, fileName) in anchorFileMapping {
             let url = Bundle.main.url(forResource: fileName, withExtension: "mp3")!
-            let audioSource = SCNAudioSource(url: url)!
-            audioSource.loops = true
-            audioSource.load()
-            audioSources[anchorName] = audioSource
+            let file = try! AVAudioFile(forReading: url)
+            let playerNode = AVAudioPlayerNode()
+            let format = file.processingFormat
+            let frameCount = UInt32(file.length)
+            let buffer = AVAudioPCMBuffer(
+                pcmFormat: format, frameCapacity: frameCount
+            )
+            try! file.read(into: buffer!)
+            
+            sceneView.audioEngine.attach(playerNode)
+            sceneView.audioEngine.connect(
+                playerNode, to: sceneView.audioEnvironmentNode, format: format
+            )
+        
+            playerNode.scheduleBuffer(
+                buffer!, at: nil, options:.loops, completionHandler: nil
+            )
+            //player.numberOfLoops = -1 // infinite loop
+            //player.prepareToPlay();
+            //let audioSource = SCNAudioSource(url: url)!
+            //audioSource.loops = true
+            //audioSource.load()
+            playerNodes[anchorName] = playerNode
             objectNodes[anchorName] = SCNNode()
             playing[anchorName] = false
         }
@@ -48,7 +67,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         guard let referenceObjects = ARReferenceObject.referenceObjects(inGroupNamed: "Anchors", bundle: nil) else {
             fatalError("Missing expected asset catalog resources.")
         }
-        print("********************* SETTING REFS \(referenceObjects)")
         configuration.detectionObjects = referenceObjects
         sceneView.session.run(configuration)
     }
@@ -70,12 +88,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         if let objectNode = objectNodes[name] {
             if(!playing[name]!) {
                 playing[name] = true
-                let audioSource = audioSources[name]!
+                let playerNode = playerNodes[name]!
                 objectNode.removeAllAudioPlayers()
-                objectNode.addAudioPlayer(SCNAudioPlayer(source: audioSource))
+                objectNode.addAudioPlayer(SCNAudioPlayer(avAudioNode: playerNode))
                 node.addChildNode(objectNode)
-                let action = SCNAction.playAudio(audioSource, waitForCompletion: false)
-                objectNode.runAction(action)
+                playerNode.play()
+                //let action = SCNAction.playAudio(audioSource, waitForCompletion: false)
+                //objectNode.runAction(action)
             }
         } else {
             print("No sound registered for anchor \(name)")
