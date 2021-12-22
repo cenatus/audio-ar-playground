@@ -8,14 +8,15 @@
 import UIKit
 import SceneKit
 import ARKit
+import PHASE
 
-class ViewController: UIViewController, ARSCNViewDelegate {
+class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
 
     @IBOutlet var sceneView: ARSCNView!
     
+    var phaseEngine: PHASEEngine!
+    var phaseListener: PHASEListener!
     
-    var audioSources: [String: SCNAudioSource] = [:]
-    var objectNodes: [String: SCNNode] = [:]
     var playing: [String: Bool] = [:]
         
     let anchorFileMapping = Dictionary(uniqueKeysWithValues: [
@@ -30,15 +31,24 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.delegate = self
         sceneView.showsStatistics = true
         
+        phaseEngine = PHASEEngine(updateMode: .automatic)
+        phaseListener = PHASEListener(engine: phaseEngine)
+        try! phaseEngine.rootObject.addChild(phaseListener)
+        
         for (anchorName, fileName) in anchorFileMapping {
             let url = Bundle.main.url(forResource: fileName, withExtension: "mp3")!
-            let audioSource = SCNAudioSource(url: url)!
-            audioSource.loops = true
-            audioSource.load()
-            audioSources[anchorName] = audioSource
-            objectNodes[anchorName] = SCNNode()
-            playing[anchorName] = false
+            let channelLayout = AVAudioChannelLayout(layoutTag: kAudioChannelLayoutTag_Mono)!
+            try! phaseEngine.assetRegistry.registerSoundAsset(
+                url: url, identifier: fileName, assetType: .resident,
+                channelLayout: nil, normalizationMode: .dynamic
+            )
+            let channelMixerDefinition = PHASEChannelMixerDefinition(channelLayout: channelLayout)
+            let samplerNodeDefinition = PHASESamplerNodeDefinition(soundAssetIdentifier: fileName, mixerDefinition: channelMixerDefinition)
+            samplerNodeDefinition.playbackMode = .looping
+            samplerNodeDefinition.setCalibrationMode(calibrationMode: .relativeSpl, level: 0)
+            try! phaseEngine.assetRegistry.registerSoundEventAsset(rootNode:samplerNodeDefinition, identifier: anchorName)
         }
+        try! phaseEngine.start()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -48,17 +58,14 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         guard let referenceObjects = ARReferenceObject.referenceObjects(inGroupNamed: "Anchors", bundle: nil) else {
             fatalError("Missing expected asset catalog resources.")
         }
-        print("********************* SETTING REFS \(referenceObjects)")
         configuration.detectionObjects = referenceObjects
         sceneView.session.run(configuration)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        for(_, objectNode) in objectNodes {
-            objectNode.removeAllAudioPlayers()
-        }
         sceneView.session.pause()
+        phaseEngine.stop()
     }
 
     // MARK: - ARSCNViewDelegate
@@ -67,19 +74,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     internal func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         let name = anchor.name!
         print("********* SEEN ANCHOR \(name)")
-        if let objectNode = objectNodes[name] {
-            if(!playing[name]!) {
-                playing[name] = true
-                let audioSource = audioSources[name]!
-                objectNode.removeAllAudioPlayers()
-                objectNode.addAudioPlayer(SCNAudioPlayer(source: audioSource))
-                node.addChildNode(objectNode)
-                let action = SCNAction.playAudio(audioSource, waitForCompletion: false)
-                objectNode.runAction(action)
-            }
-        } else {
-            print("No sound registered for anchor \(name)")
-        }
+        let soundEvent = try! PHASESoundEvent(engine: phaseEngine, assetIdentifier: name)
+        soundEvent.start()
+    }
+    
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        let transform = frame.camera.transform
+        phaseListener.transform = transform
     }
     
     func session(_ session: ARSession, didFailWithError error: Error) {
