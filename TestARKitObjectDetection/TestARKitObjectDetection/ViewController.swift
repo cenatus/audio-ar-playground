@@ -9,8 +9,9 @@ import UIKit
 import SceneKit
 import ARKit
 import PHASE
+import CoreMotion
 
-class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
+class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CMHeadphoneMotionManagerDelegate {
 
     @IBOutlet var sceneView: ARSCNView!
     
@@ -18,7 +19,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     var phaseListener: PHASEListener!
     var soundEvents: [String : PHASESoundEvent] = [:]
     var sources: [String: PHASESource] = [:]
-    
+    var headphoneTransform: simd_float4x4 = matrix_identity_float4x4;
+    let hmm = CMHeadphoneMotionManager()
     let anchorFileMapping = Dictionary(uniqueKeysWithValues: [
         ("serres_parasite", "guitar"),
         ("douglas_purity_danger", "drone"),
@@ -29,8 +31,17 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         super.viewDidLoad()
         
         sceneView.delegate = self
-        sceneView.session.delegate = selfg
+        sceneView.session.delegate = self
         sceneView.showsStatistics = true
+        
+        hmm.delegate = self
+        guard hmm.isDeviceMotionAvailable else {
+            fatalError("Sorry, your device is not supported.")
+        }
+        hmm.startDeviceMotionUpdates(to: OperationQueue.current!, withHandler: {[weak self] motion, error  in
+             guard let motion = motion, error == nil else { return }
+             self?.handleHeadMovement(motion)
+         })
         
         phaseEngine = PHASEEngine(updateMode: .automatic)
         phaseListener = PHASEListener(engine: phaseEngine)
@@ -46,8 +57,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         let distanceModelParameters = PHASEGeometricSpreadingDistanceModelParameters()
         distanceModelParameters.fadeOutParameters =
-        PHASEDistanceModelFadeOutParameters(cullDistance: 10.0)
-        distanceModelParameters.rolloffFactor = 0.25
+        PHASEDistanceModelFadeOutParameters(cullDistance: 5.0)
+        distanceModelParameters.rolloffFactor = 2.0
         spatialMixerDefinition.distanceModelParameters = distanceModelParameters
         
         
@@ -113,7 +124,6 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         print("********* SEEN ANCHOR \(name)")
         let source = sources[name]!
         let transform = anchor.transform
-        print("********* POS: \(transform.columns.3)")
         source.transform = transform
         let soundEvent = soundEvents[name]!
         soundEvent.start()
@@ -121,8 +131,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         let transform = frame.camera.transform
-        print("********* CAMERA: \(transform.columns.3)")
-        phaseListener.transform = transform
+        phaseListener.transform = transform * headphoneTransform
     }
     
     func session(_ session: ARSession, didFailWithError error: Error) {
@@ -138,5 +147,14 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     func sessionInterruptionEnded(_ session: ARSession) {
         // Reset tracking and/or remove existing anchors if consistent tracking is required
         
+    }
+    
+    func handleHeadMovement(_ motion: CMDeviceMotion) {
+        let m = motion.attitude.rotationMatrix
+        let x = SIMD4(Float(m.m11), Float(m.m21), Float(m.m31), 0)
+        let y = SIMD4(Float(m.m12), Float(m.m22), Float(m.m32), 0)
+        let z = SIMD4(Float(m.m13), Float(m.m23), Float(m.m33), 0)
+        let w = SIMD4(Float(0), Float(0), Float(0), Float(1))
+        headphoneTransform = simd_float4x4(columns: (x, y, z, w))
     }
 }
