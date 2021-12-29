@@ -29,6 +29,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         super.viewDidLoad()
         
         sceneView.delegate = self
+        sceneView.session.delegate = selfg
         sceneView.showsStatistics = true
         
         phaseEngine = PHASEEngine(updateMode: .automatic)
@@ -112,7 +113,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         print("********* SEEN ANCHOR \(name)")
         let source = sources[name]!
         let transform = anchor.transform
-        print("********* X: \(transform.x), Y: \(transform.y), Z: \(transform.z)")
+        print("********* POS: \(transform.columns.3)")
         source.transform = transform
         let soundEvent = soundEvents[name]!
         soundEvent.start()
@@ -120,6 +121,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         let transform = frame.camera.transform
+        print("********* CAMERA: \(transform.columns.3)")
         phaseListener.transform = transform
     }
     
