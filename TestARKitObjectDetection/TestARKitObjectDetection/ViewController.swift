@@ -40,16 +40,12 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
     
     func setupMaterials() {
         innerMaterial.isDoubleSided = true
-        innerMaterial.emission.contents = UIColor.systemYellow
         innerMaterial.diffuse.contents = UIColor.systemYellow
-        innerMaterial.transparency = 0.8
-        innerMaterial.emission.intensity = 0.5
+        innerMaterial.fillMode = .lines
         
         outerMaterial.isDoubleSided = true
         outerMaterial.diffuse.contents = UIColor.systemBlue
-        outerMaterial.emission.contents = UIColor.systemBlue
-        outerMaterial.emission.intensity = 0.5
-        outerMaterial.transparency = 0.5
+        outerMaterial.fillMode = .lines
     }
     
     func setupSceneView() {
@@ -161,20 +157,18 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
     
     func displaySourceSpheres(transform: float4x4, inner_radius: Float, outer_radius: Float) {
         let innerSphereGeometry = SCNSphere(radius: CGFloat(inner_radius))
+        innerSphereGeometry.isGeodesic = true
+        innerSphereGeometry.segmentCount = 48
+        
         let outerSphereGeometry = SCNSphere(radius: CGFloat(outer_radius))
-       
+        outerSphereGeometry.isGeodesic = true
+        outerSphereGeometry.segmentCount = 48
+        
         innerSphereGeometry.firstMaterial = innerMaterial
         outerSphereGeometry.firstMaterial = outerMaterial
         
-        let outerSphereLight = SCNLight()
-        outerSphereLight.type = SCNLight.LightType.omni
-        outerSphereLight.zFar = CGFloat(outer_radius * 2)
-        outerSphereLight.color = UIColor.white
-        
         let innerSphereNode = SCNNode(geometry: innerSphereGeometry)
         let outerSphereNode = SCNNode(geometry: outerSphereGeometry)
-        
-        outerSphereNode.light = outerSphereLight
         
         innerSphereNode.transform = SCNMatrix4(transform)
         outerSphereNode.transform = SCNMatrix4(transform)
