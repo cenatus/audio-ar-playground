@@ -15,13 +15,16 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
 
     @IBOutlet var sceneView: ARSCNView!
     
-    
     var phaseEngine: PHASEEngine!
     var phaseListener: PHASEListener!
+    var phaseSpatialMixerDefinition: PHASESpatialMixerDefinition!
+    
     var soundEvents: [String : PHASESoundEvent] = [:]
     var sources: [String: PHASESource] = [:]
+    
     var headphoneTransform: simd_float4x4 = matrix_identity_float4x4;
     let hmm = CMHeadphoneMotionManager()
+    
     let anchorFileMapping = Dictionary(uniqueKeysWithValues: [
         ("serres_parasite", "guitar"),
         ("douglas_purity_danger", "drone"),
@@ -29,14 +32,32 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
     ])
     
     let innerMaterial = SCNMaterial()
-    
-    
     let outerMaterial = SCNMaterial()
    
-    
     let DEFAULT_RADIUS : Float = 0.0142
     let DEFAULT_CULL_DISTANCE : Double = 5.0
     let DEFAULT_ROLLOFF_FACTOR : Double = 2.0
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        setupMaterials()
+        setupSceneView()
+        setupHMM()
+        setupPhase()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        setupTracking()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        sceneView.session.pause()
+        phaseEngine.stop()
+    }
     
     func setupMaterials() {
         innerMaterial.isDoubleSided = true
@@ -66,63 +87,6 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
          })
     }
     
-    func setupPhase() {
-        phaseEngine = PHASEEngine(updateMode: .automatic)
-        phaseListener = PHASEListener(engine: phaseEngine)
-        phaseListener.transform = matrix_identity_float4x4
-        try! phaseEngine.rootObject.addChild(phaseListener)
-        
-        let spatialPipelineFlags : PHASESpatialPipeline.Flags = [.directPathTransmission, .lateReverb]
-        let spatialPipeline = PHASESpatialPipeline(flags: spatialPipelineFlags)!
-        spatialPipeline.entries[PHASESpatialCategory.lateReverb]!.sendLevel = 0.1;
-        phaseEngine.defaultReverbPreset = .mediumRoom
-        
-        let spatialMixerDefinition = PHASESpatialMixerDefinition(spatialPipeline: spatialPipeline)
-        
-        let distanceModelParameters = PHASEGeometricSpreadingDistanceModelParameters()
-        distanceModelParameters.fadeOutParameters =
-        PHASEDistanceModelFadeOutParameters(cullDistance: DEFAULT_CULL_DISTANCE)
-        distanceModelParameters.rolloffFactor = DEFAULT_ROLLOFF_FACTOR
-        spatialMixerDefinition.distanceModelParameters = distanceModelParameters
-        
-        
-        for (anchorName, fileName) in anchorFileMapping {
-            let url = Bundle.main.url(forResource: fileName, withExtension: "mp3")!
-            try! phaseEngine.assetRegistry.registerSoundAsset(
-                url: url, identifier: fileName, assetType: .resident,
-                channelLayout: nil, normalizationMode: .dynamic
-            )
-            
-            let samplerNodeDefinition = PHASESamplerNodeDefinition(
-                soundAssetIdentifier: fileName, mixerDefinition: spatialMixerDefinition
-            )
-            samplerNodeDefinition.playbackMode = .looping
-            samplerNodeDefinition.setCalibrationMode(calibrationMode: .relativeSpl, level: 12)
-            samplerNodeDefinition.cullOption = .sleepWakeAtRealtimeOffset
-            try! phaseEngine.assetRegistry.registerSoundEventAsset(rootNode:samplerNodeDefinition, identifier: anchorName)
-            
-            let mesh = MDLMesh.newIcosahedron(withRadius: DEFAULT_RADIUS, inwardNormals: false, allocator: nil)
-            let shape = PHASEShape(engine: phaseEngine, mesh: mesh)
-            let source = PHASESource(engine: phaseEngine, shapes: [shape])
-            sources[anchorName] = source
-            try! phaseEngine.rootObject.addChild(source)
-            
-            let mixerParameters = PHASEMixerParameters()
-            mixerParameters.addSpatialMixerParameters(
-                identifier: spatialMixerDefinition.identifier,
-                source: source, listener: phaseListener
-            )
-    
-            let soundEvent = try! PHASESoundEvent(
-                engine: phaseEngine, assetIdentifier: anchorName,
-                mixerParameters: mixerParameters
-            )
-            
-            soundEvents[anchorName] = soundEvent
-        }
-        try! phaseEngine.start()
-    }
-    
     func setupTracking() {
         let configuration = ARWorldTrackingConfiguration()
         guard let referenceObjects = ARReferenceObject.referenceObjects(inGroupNamed: "Anchors", bundle: nil) else {
@@ -132,28 +96,89 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
         sceneView.session.run(configuration)
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    func setupPhase() {
+        phaseEngine = PHASEEngine(updateMode: .automatic)
+        phaseSpatialMixerDefinition = setupPhaseSpatialMixerDefinition()
+        phaseListener = setupPhaseListener()
         
-        setupMaterials()
-        setupSceneView()
-        setupHMM()
-        setupPhase()
+        for (anchorName, fileName) in anchorFileMapping {
+            registerSoundWithPhase(anchorName: anchorName, fileName: fileName)
+        }
+        
+        try! phaseEngine.start()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        
-        setupTracking()
+    func setupPhaseListener() -> PHASEListener {
+        let listener = PHASEListener(engine: phaseEngine)
+        listener.transform = matrix_identity_float4x4
+        try! phaseEngine.rootObject.addChild(listener)
+        return listener
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        sceneView.session.pause()
-        phaseEngine.stop()
+    func setupPhaseSpatialMixerDefinition() -> PHASESpatialMixerDefinition {
+        let spatialPipeline = setupPhaseSpatialPipeline()
+        let distanceModelParameters = setupPhaseDistanceModelParameters()
+        
+        let spatialMixerDefinition = PHASESpatialMixerDefinition(spatialPipeline: spatialPipeline)
+        spatialMixerDefinition.distanceModelParameters = distanceModelParameters
+        
+        return spatialMixerDefinition
     }
+    
+    func setupPhaseSpatialPipeline() -> PHASESpatialPipeline {
+        let spatialPipelineFlags : PHASESpatialPipeline.Flags = [.directPathTransmission, .lateReverb]
+        let spatialPipeline = PHASESpatialPipeline(flags: spatialPipelineFlags)!
+        spatialPipeline.entries[PHASESpatialCategory.lateReverb]!.sendLevel = 0.1;
+        phaseEngine.defaultReverbPreset = .mediumRoom
+        return spatialPipeline
+    }
+    
+    func setupPhaseDistanceModelParameters() -> PHASEDistanceModelParameters {
+        let distanceModelParameters = PHASEGeometricSpreadingDistanceModelParameters()
+        distanceModelParameters.fadeOutParameters =
+        PHASEDistanceModelFadeOutParameters(cullDistance: DEFAULT_CULL_DISTANCE)
+        distanceModelParameters.rolloffFactor = DEFAULT_ROLLOFF_FACTOR
+        return distanceModelParameters
+    }
+    
+    func registerSoundWithPhase(anchorName : String, fileName : String) {
+        let url = Bundle.main.url(forResource: fileName, withExtension: "mp3")!
+        
+        try! phaseEngine.assetRegistry.registerSoundAsset(
+            url: url, identifier: fileName, assetType: .resident,
+            channelLayout: nil, normalizationMode: .dynamic
+        )
+        
+        let samplerNodeDefinition = PHASESamplerNodeDefinition(
+            soundAssetIdentifier: fileName, mixerDefinition: phaseSpatialMixerDefinition!
+        )
+        
+        samplerNodeDefinition.playbackMode = .looping
+        samplerNodeDefinition.setCalibrationMode(calibrationMode: .relativeSpl, level: 12)
+        samplerNodeDefinition.cullOption = .sleepWakeAtRealtimeOffset
+        
+        try! phaseEngine.assetRegistry.registerSoundEventAsset(rootNode:samplerNodeDefinition, identifier: anchorName)
+        
+        let mesh = MDLMesh.newIcosahedron(withRadius: DEFAULT_RADIUS, inwardNormals: false, allocator: nil)
+        
+        let shape = PHASEShape(engine: phaseEngine, mesh: mesh)
+        let source = PHASESource(engine: phaseEngine, shapes: [shape])
+        sources[anchorName] = source
+        try! phaseEngine.rootObject.addChild(source)
+        
+        let mixerParameters = PHASEMixerParameters()
+        mixerParameters.addSpatialMixerParameters(
+            identifier: phaseSpatialMixerDefinition.identifier,
+            source: source, listener: phaseListener
+        )
 
-    // MARK: - ARSCNViewDelegate
+        let soundEvent = try! PHASESoundEvent(
+            engine: phaseEngine, assetIdentifier: anchorName,
+            mixerParameters: mixerParameters
+        )
+        
+        soundEvents[anchorName] = soundEvent
+    }
     
     func displaySourceSpheres(transform: float4x4, inner_radius: Float, outer_radius: Float) {
         let innerSphereGeometry = SCNSphere(radius: CGFloat(inner_radius))
@@ -184,6 +209,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
         soundEvent.start()
     }
     
+    // MARK: - ARSCNViewDelegate
+        
     // Override to create and configure nodes for anchors added to the view's session.
     internal func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         let name = anchor.name!
