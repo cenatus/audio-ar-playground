@@ -15,6 +15,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
 
     @IBOutlet var sceneView: ARSCNView!
     
+    
     var phaseEngine: PHASEEngine!
     var phaseListener: PHASEListener!
     var soundEvents: [String : PHASESoundEvent] = [:]
@@ -27,13 +28,38 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
         ("morton_being_ecological", "piano")
     ])
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    let innerMaterial = SCNMaterial()
+    
+    
+    let outerMaterial = SCNMaterial()
+   
+    
+    let DEFAULT_RADIUS : Float = 0.0142
+    let DEFAULT_CULL_DISTANCE : Double = 5.0
+    let DEFAULT_ROLLOFF_FACTOR : Double = 2.0
+    
+    func setupMaterials() {
+        innerMaterial.isDoubleSided = true
+        innerMaterial.emission.contents = UIColor.systemYellow
+        innerMaterial.diffuse.contents = UIColor.systemYellow
+        innerMaterial.transparency = 0.8
+        innerMaterial.emission.intensity = 0.5
         
+        outerMaterial.isDoubleSided = true
+        outerMaterial.diffuse.contents = UIColor.systemBlue
+        outerMaterial.emission.contents = UIColor.systemBlue
+        outerMaterial.emission.intensity = 0.5
+        outerMaterial.transparency = 0.5
+    }
+    
+    func setupSceneView() {
         sceneView.delegate = self
         sceneView.session.delegate = self
         sceneView.showsStatistics = true
-        
+        sceneView.autoenablesDefaultLighting = true
+    }
+    
+    func setupHMM() {
         hmm.delegate = self
         guard hmm.isDeviceMotionAvailable else {
             fatalError("Sorry, your device is not supported.")
@@ -42,7 +68,9 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
              guard let motion = motion, error == nil else { return }
              self?.handleHeadMovement(motion)
          })
-        
+    }
+    
+    func setupPhase() {
         phaseEngine = PHASEEngine(updateMode: .automatic)
         phaseListener = PHASEListener(engine: phaseEngine)
         phaseListener.transform = matrix_identity_float4x4
@@ -57,8 +85,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
         
         let distanceModelParameters = PHASEGeometricSpreadingDistanceModelParameters()
         distanceModelParameters.fadeOutParameters =
-        PHASEDistanceModelFadeOutParameters(cullDistance: 5.0)
-        distanceModelParameters.rolloffFactor = 2.0
+        PHASEDistanceModelFadeOutParameters(cullDistance: DEFAULT_CULL_DISTANCE)
+        distanceModelParameters.rolloffFactor = DEFAULT_ROLLOFF_FACTOR
         spatialMixerDefinition.distanceModelParameters = distanceModelParameters
         
         
@@ -77,7 +105,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
             samplerNodeDefinition.cullOption = .sleepWakeAtRealtimeOffset
             try! phaseEngine.assetRegistry.registerSoundEventAsset(rootNode:samplerNodeDefinition, identifier: anchorName)
             
-            let mesh = MDLMesh.newIcosahedron(withRadius: 00.0142, inwardNormals: false, allocator: nil)
+            let mesh = MDLMesh.newIcosahedron(withRadius: DEFAULT_RADIUS, inwardNormals: false, allocator: nil)
             let shape = PHASEShape(engine: phaseEngine, mesh: mesh)
             let source = PHASESource(engine: phaseEngine, shapes: [shape])
             sources[anchorName] = source
@@ -99,15 +127,28 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
         try! phaseEngine.start()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        
+    func setupTracking() {
         let configuration = ARWorldTrackingConfiguration()
         guard let referenceObjects = ARReferenceObject.referenceObjects(inGroupNamed: "Anchors", bundle: nil) else {
             fatalError("Missing expected asset catalog resources.")
         }
         configuration.detectionObjects = referenceObjects
         sceneView.session.run(configuration)
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        setupMaterials()
+        setupSceneView()
+        setupHMM()
+        setupPhase()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        setupTracking()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -118,15 +159,47 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
 
     // MARK: - ARSCNViewDelegate
     
-    // Override to create and configure nodes for anchors added to the view's session.
-    internal func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        let name = anchor.name!
-        print("********* SEEN ANCHOR \(name)")
+    func displaySourceSpheres(transform: float4x4, inner_radius: Float, outer_radius: Float) {
+        let innerSphereGeometry = SCNSphere(radius: CGFloat(inner_radius))
+        let outerSphereGeometry = SCNSphere(radius: CGFloat(outer_radius))
+       
+        innerSphereGeometry.firstMaterial = innerMaterial
+        outerSphereGeometry.firstMaterial = outerMaterial
+        
+        let outerSphereLight = SCNLight()
+        outerSphereLight.type = SCNLight.LightType.omni
+        outerSphereLight.zFar = CGFloat(outer_radius * 2)
+        outerSphereLight.color = UIColor.white
+        
+        let innerSphereNode = SCNNode(geometry: innerSphereGeometry)
+        let outerSphereNode = SCNNode(geometry: outerSphereGeometry)
+        
+        outerSphereNode.light = outerSphereLight
+        
+        innerSphereNode.transform = SCNMatrix4(transform)
+        outerSphereNode.transform = SCNMatrix4(transform)
+        
+        sceneView.scene.rootNode.addChildNode(innerSphereNode)
+        sceneView.scene.rootNode.addChildNode(outerSphereNode)
+    }
+    
+    func playAudioSource(name: String, transform: float4x4) {
         let source = sources[name]!
-        let transform = anchor.transform
         source.transform = transform
         let soundEvent = soundEvents[name]!
         soundEvent.start()
+    }
+    
+    // Override to create and configure nodes for anchors added to the view's session.
+    internal func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
+        let name = anchor.name!
+        let transform = anchor.transform
+        
+        print("********* SEEN ANCHOR \(name)")
+        
+        displaySourceSpheres(transform: transform, inner_radius: DEFAULT_RADIUS, outer_radius: Float(DEFAULT_CULL_DISTANCE))
+        
+        playAudioSource(name: name, transform: transform)
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
