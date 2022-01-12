@@ -15,36 +15,23 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
 
     @IBOutlet var sceneView: ARSCNView!
     
+    let PLAYER_CONFIG_FILE_NAME = "sounds"
+    
     var phasePlayer : PHASEPlayer!
+    var debugRenderer : PHASEPlayerDebugRenderer!
     
     let hmm = CMHeadphoneMotionManager()
     
-    let DEFAULT_RADIUS : Float = 0.0142
-    let DEFAULT_CULL_DISTANCE : Double = 5.0
-    let DEFAULT_ROLLOFF_FACTOR : Double = 2.0
-    
-    let anchorFileMapping = Dictionary(uniqueKeysWithValues: [
-        ("serres_parasite", "guitar"),
-        ("douglas_purity_danger", "drone"),
-        ("morton_being_ecological", "piano")
-    ])
-    
-    let innerMaterial = SCNMaterial()
-    let outerMaterial = SCNMaterial()
-   
-
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        setupMaterials()
         setupSceneView()
         setupHMM()
         setupPhase()
+        setupDebugRenderer()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
         setupTracking()
     }
     
@@ -52,16 +39,6 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
         super.viewWillDisappear(animated)
         sceneView.session.pause()
         phasePlayer.teardown()
-    }
-    
-    func setupMaterials() {
-        innerMaterial.isDoubleSided = true
-        innerMaterial.diffuse.contents = UIColor.systemYellow
-        innerMaterial.fillMode = .lines
-        
-        outerMaterial.isDoubleSided = true
-        outerMaterial.diffuse.contents = UIColor.systemBlue
-        outerMaterial.fillMode = .lines
     }
     
     func setupSceneView() {
@@ -92,30 +69,12 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
     }
     
     func setupPhase() {
-        phasePlayer = PHASEPlayer(samples: anchorFileMapping, radius: DEFAULT_RADIUS, cullDistance: DEFAULT_CULL_DISTANCE, rolloffFactor: DEFAULT_ROLLOFF_FACTOR)
+        phasePlayer = PHASEPlayer(PLAYER_CONFIG_FILE_NAME)
         phasePlayer.setup()
     }
     
-    func displaySourceSpheres(transform: float4x4, inner_radius: Float, outer_radius: Float) {
-        let innerSphereGeometry = SCNSphere(radius: CGFloat(inner_radius))
-        innerSphereGeometry.isGeodesic = true
-        innerSphereGeometry.segmentCount = 48
-        
-        let outerSphereGeometry = SCNSphere(radius: CGFloat(outer_radius))
-        outerSphereGeometry.isGeodesic = true
-        outerSphereGeometry.segmentCount = 48
-        
-        innerSphereGeometry.firstMaterial = innerMaterial
-        outerSphereGeometry.firstMaterial = outerMaterial
-        
-        let innerSphereNode = SCNNode(geometry: innerSphereGeometry)
-        let outerSphereNode = SCNNode(geometry: outerSphereGeometry)
-        
-        innerSphereNode.transform = SCNMatrix4(transform)
-        outerSphereNode.transform = SCNMatrix4(transform)
-        
-        sceneView.scene.rootNode.addChildNode(innerSphereNode)
-        sceneView.scene.rootNode.addChildNode(outerSphereNode)
+    func setupDebugRenderer() {
+        debugRenderer = PHASEPlayerDebugRenderer(sceneView.scene)
     }
     
     // MARK: - ARSCNViewDelegate
@@ -127,37 +86,32 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, CM
         
         print("********* SEEN ANCHOR \(name)")
         
-        displaySourceSpheres(transform: transform, inner_radius: DEFAULT_RADIUS, outer_radius: Float(DEFAULT_CULL_DISTANCE))
-        phasePlayer.playSampleAtPosition(sample: name, position: transform)
-
+        let sound = phasePlayer.playSampleAtPosition(sample: name, position: transform)
+        debugRenderer.displaySoundSource(sound)
     }
+    
+    // MARK: - ARSessionDelegate
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         let transform = frame.camera.transform
-        phasePlayer.updateListenerPosition(position: transform)
+        phasePlayer.devicePosition = transform
     }
     
-    func session(_ session: ARSession, didFailWithError error: Error) {
-        // Present an error message to the user
-        
-    }
-    
-    func sessionWasInterrupted(_ session: ARSession) {
-        // Inform the user that the session has been interrupted, for example, by presenting an overlay
-        
-    }
-    
-    func sessionInterruptionEnded(_ session: ARSession) {
-        // Reset tracking and/or remove existing anchors if consistent tracking is required
-        
-    }
+    // MARK: - CMHeadphoneMotionManagerDelegate
     
     func handleHeadMovement(_ motion: CMDeviceMotion) {
-        let m = motion.attitude.rotationMatrix
+        let transform = motion.attitude.rotationMatrix.toFloat4x4()
+        phasePlayer.headPosition = transform
+    }
+}
+
+extension CMRotationMatrix {
+    func toFloat4x4() -> float4x4 {
+        let m = self
         let x = SIMD4(Float(m.m11), Float(m.m21), Float(m.m31), 0)
         let y = SIMD4(Float(m.m12), Float(m.m22), Float(m.m32), 0)
         let z = SIMD4(Float(m.m13), Float(m.m23), Float(m.m33), 0)
         let w = SIMD4(Float(0), Float(0), Float(0), Float(1))
-        phasePlayer.updateListenerHeadPosition(position: simd_float4x4(columns: (x, y, z, w)))
+        return simd_float4x4(columns: (x, y, z, w))
     }
 }
