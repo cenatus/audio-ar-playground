@@ -16,6 +16,8 @@ class PHASEPlayerSound {
         let source_radius: Float
         let cull_distance: Double
         let rolloff_factor: Double
+        let reverb_send_level: Double
+        let reference_level: Double
     }
     
     let player : PHASEPlayer!
@@ -29,6 +31,8 @@ class PHASEPlayerSound {
     let sourceRadius: Float!
     let cullDistance: Double!
     let rolloffFactor: Double!
+    let reverbSendLevel: Double!
+    let referenceLevel: Double!
     
     var position : float4x4 {
         get { return source.transform }
@@ -47,6 +51,8 @@ class PHASEPlayerSound {
         self.sourceRadius = config.source_radius
         self.cullDistance = config.cull_distance
         self.rolloffFactor = config.rolloff_factor
+        self.reverbSendLevel = config.reverb_send_level
+        self.referenceLevel = config.reference_level
         
         let url = Bundle.main.url(forResource: audioFile, withExtension: "mp3")!
         
@@ -57,7 +63,7 @@ class PHASEPlayerSound {
         
         let spatialPipelineFlags : PHASESpatialPipeline.Flags = [.directPathTransmission, .lateReverb]
         let spatialPipeline = PHASESpatialPipeline(flags: spatialPipelineFlags)!
-        spatialPipeline.entries[PHASESpatialCategory.lateReverb]!.sendLevel = 0.1;
+        spatialPipeline.entries[PHASESpatialCategory.lateReverb]!.sendLevel = reverbSendLevel;
         
         let distanceModelParameters = PHASEGeometricSpreadingDistanceModelParameters()
         distanceModelParameters.fadeOutParameters =
@@ -73,7 +79,7 @@ class PHASEPlayerSound {
         )
         
         samplerNodeDefinition.playbackMode = .looping
-        samplerNodeDefinition.setCalibrationMode(calibrationMode: .relativeSpl, level: 12)
+        samplerNodeDefinition.setCalibrationMode(calibrationMode: .relativeSpl, level: referenceLevel)
         samplerNodeDefinition.cullOption = .sleepWakeAtRealtimeOffset
         
         try! player.engine.assetRegistry.registerSoundEventAsset(rootNode: samplerNodeDefinition, identifier: anchorName)

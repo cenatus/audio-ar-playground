@@ -1,4 +1,5 @@
 {
+    "reverb_preset": "largeRoom",
     "sounds": [
         {
             "anchor_name": "serres_parasite",
@@ -6,7 +7,9 @@
             "debug_color": "yellow",
             "source_radius": 0.08,
             "cull_distance": 5.0,
-            "rolloff_factor": 2.0
+            "rolloff_factor": 2.0,
+            "reverb_send_level": 0.1,
+            "reference_level": 12
         },
         {
             "anchor_name": "douglas_purity_danger",
@@ -14,7 +17,9 @@
             "debug_color": "blue",
             "source_radius": 0.2,
             "cull_distance": 8.0,
-            "rolloff_factor": 2.0
+            "rolloff_factor": 2.0,
+            "reverb_send_level": 0.1,
+            "reference_level": 12
         },
         {
             "anchor_name": "morton_being_ecological",
@@ -22,7 +27,9 @@
             "debug_color": "cyan",
             "source_radius": 0.0142,
             "cull_distance": 1.0,
-            "rolloff_factor": 2.0
+            "rolloff_factor": 2.0,
+            "reverb_send_level": 0.5,
+            "reference_level": 12
         }
     ]
 }

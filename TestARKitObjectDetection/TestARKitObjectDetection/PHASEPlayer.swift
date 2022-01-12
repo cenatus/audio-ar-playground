@@ -11,8 +11,26 @@ import PHASE
 class PHASEPlayer {
     
     struct Config: Codable {
+        let reverb_preset: String
         let sounds : [PHASEPlayerSound.Config]
     }
+    
+    // kinda amazed you can't just look up in an enum by string directly, but ¯\_(ツ)_/¯
+    let REVERB_PRESETS : [String :PHASEReverbPreset] = Dictionary.init(uniqueKeysWithValues: [
+        ("cathedral", PHASEReverbPreset.cathedral),
+        ("largeHall", PHASEReverbPreset.largeHall),
+        ("largeHall2", PHASEReverbPreset.largeHall2),
+        ("largeChamber", PHASEReverbPreset.largeChamber),
+        ("largeRoom", PHASEReverbPreset.largeRoom),
+        ("largeRoom2", PHASEReverbPreset.largeRoom2),
+        ("mediumHall", PHASEReverbPreset.mediumHall),
+        ("mediumHall2", PHASEReverbPreset.mediumHall2),
+        ("mediumHall3", PHASEReverbPreset.mediumHall3),
+        ("mediumChamber", PHASEReverbPreset.mediumChamber),
+        ("mediumRoom", PHASEReverbPreset.mediumRoom),
+        ("smallRoom", PHASEReverbPreset.smallRoom),
+        ("none", PHASEReverbPreset.none)
+    ])
     
     let engine: PHASEEngine!
     let listener: PHASEListener!
@@ -44,7 +62,6 @@ class PHASEPlayer {
     
     init(_ configFileName : String) {
         self.engine = PHASEEngine(updateMode: .automatic)
-        self.engine.defaultReverbPreset = .largeRoom
         self.listener = PHASEListener(engine: self.engine)
         self.listener.transform = matrix_identity_float4x4
         try! self.engine.rootObject.addChild(self.listener)
@@ -53,7 +70,9 @@ class PHASEPlayer {
         let data = try! Data(contentsOf: URL(fileURLWithPath: path), options: .mappedIfSafe)
         let decoder = JSONDecoder()
         let config = try! decoder.decode(Config.self, from: data)
-    
+        
+        self.engine.defaultReverbPreset = REVERB_PRESETS[config.reverb_preset]!
+        
         for soundConfig in config.sounds {
             sounds[soundConfig.anchor_name] = PHASEPlayerSound(player: self, config: soundConfig)
         }
