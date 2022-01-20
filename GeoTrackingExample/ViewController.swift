@@ -246,6 +246,7 @@ class ViewController: UIViewController, ARSessionDelegate, CLLocationManagerDele
             DispatchQueue.main.asyncAfter(deadline: .now() + (distanceFromDevice(geoAnchor.coordinate) / 10)) {
                 // Add an AR placemark visualization for the geo anchor.
                 self.arView.scene.addAnchor(Entity.placemarkEntity(for: geoAnchor))
+                self.play(geoAnchor: geoAnchor)
             }
             // Add a visualization for the geo anchor in the map view.
             let anchorIndicator = AnchorIndicator(center: geoAnchor.coordinate)
@@ -303,6 +304,15 @@ class ViewController: UIViewController, ARSessionDelegate, CLLocationManagerDele
         }
         self.trackingStateLabel.text = text
     }
+    
+    func play(geoAnchor: ARGeoAnchor) {
+        let audio1 = try! AudioFileResource.load(named: "msp-cb.mp3")
+        audio1.shouldLoop = true
+        let entity = AnchorEntity(anchor: geoAnchor)
+        self.arView.scene.addAnchor(entity)
+        entity.playAudio(audio1)
+    }
+
         
     // MARK: - CLLocationManagerDelegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
