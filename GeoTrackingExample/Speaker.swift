@@ -32,7 +32,7 @@ class Speaker {
         
         self.color = UIColor(red:   Double(config["r"] ?? "0.0")!,
                              green: Double(config["g"] ?? "0.0")!,
-                             blue:  Double(config["b"] ?? "0.1")!,
+                             blue:  Double(config["b"] ?? "1.0")!,
                              alpha: Double(config["a"] ?? "0.7")!
         )
         
@@ -43,5 +43,17 @@ class Speaker {
                 longitude: self.lon),
             altitude: CLLocationDistance(self.ele)
         )
+    }
+    
+    static func hardcoded() -> Speaker {
+        var defaultConfig: [String:String] = [:]
+        
+        defaultConfig["name"] = "hardcoded-bandstand"
+        defaultConfig["lat"] = "51.526060"
+        defaultConfig["lon"] = "-0.074908"
+        defaultConfig["ele"] = "0.1"
+        
+        return Speaker(defaultConfig)
+        
     }
 }

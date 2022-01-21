@@ -247,12 +247,22 @@ class ViewController: UIViewController, ARSessionDelegate, CLLocationManagerDele
         for geoAnchor in anchors.compactMap({ $0 as? ARGeoAnchor }) {
             // Effect a spatial-based delay to avoid blocking the main thread.
             DispatchQueue.main.asyncAfter(deadline: .now() + (distanceFromDevice(geoAnchor.coordinate) / 10)) {
+                
+                let speakerName = geoAnchor.name ?? "unknown"
+                var speaker = Speaker.hardcoded()
+                
+                if self.speakers.keys.contains(speakerName) {
+                    speaker = self.speakers[speakerName]!
+                }
+                
                 // Add an AR placemark visualization for the geo anchor.
                 self.arView.scene.addAnchor(
-                    Entity.placemarkEntity(for: geoAnchor)
+                    Entity.placemarkEntity(
+                        for: geoAnchor,
+                           with: speaker.color)
                 )
-                let speaker = self.speakers[geoAnchor.name!]
-                self.play(speaker!)
+                
+                self.play(speaker)
             }
             // Add a visualization for the geo anchor in the map view.
             let anchorIndicator = AnchorIndicator(center: geoAnchor.coordinate)

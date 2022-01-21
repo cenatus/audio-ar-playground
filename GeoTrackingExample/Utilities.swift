@@ -30,10 +30,10 @@ extension simd_float4x4 {
 }
 
 extension Entity {
-    static func placemarkEntity(for arAnchor: ARAnchor) -> AnchorEntity {
+    static func placemarkEntity(for arAnchor: ARAnchor, with color: UIColor) -> AnchorEntity {
         let placemarkAnchor = AnchorEntity(anchor: arAnchor)
         
-        let sphereIndicator = generateSphereIndicator(radius: 0.1)
+        let sphereIndicator = generateSphereIndicator(radius: 0.1, color: color)
         
         // Move the indicator up by half its height so that it doesn't intersect with the ground.
         let height = sphereIndicator.visualBounds(relativeTo: nil).extents.y
@@ -48,10 +48,13 @@ extension Entity {
         return placemarkAnchor
     }
     
-    static func generateSphereIndicator(radius: Float) -> Entity {
-        let indicatorEntity = Entity()
+    static func generateSphereIndicator(radius: Float, color: UIColor) -> Entity {
+        let indicatorEntity = Entity()        
         
-        let innerSphere = ModelEntity.blueSphere.clone(recursive: true)
+        let innerSphere = ModelEntity(
+            mesh: MeshResource.generateSphere(radius: 0.066),
+            materials: [UnlitMaterial(color: color)])
+        
         indicatorEntity.addChild(innerSphere)
         let outerSphere = ModelEntity.transparentSphere.clone(recursive: true)
         indicatorEntity.addChild(outerSphere)
