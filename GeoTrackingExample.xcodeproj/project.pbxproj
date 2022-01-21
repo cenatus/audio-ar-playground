@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		72F7D5F12799A6D100924477 /* msp-cb.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 72F7D5F02799A6D100924477 /* msp-cb.mp3 */; };
+		72F7D5F5279AEFBD00924477 /* msp-test.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 72F7D5F4279AEFBD00924477 /* msp-test.gpx */; };
+		72F7D5F7279AF5A700924477 /* Speaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72F7D5F6279AF5A700924477 /* Speaker.swift */; };
 		E110381D24054CD10027DC8A /* GPXExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E110381C24054CD10027DC8A /* GPXExporter.swift */; };
 		E110381F24054D730027DC8A /* GPXParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = E110381E24054D720027DC8A /* GPXParser.swift */; };
 		E1103821240552F20027DC8A /* ViewController+LoadSaveAnchors.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1103820240552F20027DC8A /* ViewController+LoadSaveAnchors.swift */; };
@@ -26,6 +28,9 @@
 		0C98B1E08EFB84D67C6C36E6 /* SampleCode.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = SampleCode.xcconfig; path = Configuration/SampleCode.xcconfig; sourceTree = "<group>"; };
 		1A0245E08A44E0A40C55F271 /* LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		72F7D5F02799A6D100924477 /* msp-cb.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "msp-cb.mp3"; sourceTree = "<group>"; };
+		72F7D5F4279AEFBD00924477 /* msp-test.gpx */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "msp-test.gpx"; sourceTree = "<group>"; };
+		72F7D5F6279AF5A700924477 /* Speaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speaker.swift; sourceTree = "<group>"; };
+		72F7D5F8279AFE8E00924477 /* Arnold Circus 20211217 1454 - AC Bandstand 2.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = "Arnold Circus 20211217 1454 - AC Bandstand 2.mov"; sourceTree = "<group>"; };
 		E110381C24054CD10027DC8A /* GPXExporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GPXExporter.swift; sourceTree = "<group>"; };
 		E110381E24054D720027DC8A /* GPXParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GPXParser.swift; sourceTree = "<group>"; };
 		E1103820240552F20027DC8A /* ViewController+LoadSaveAnchors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "ViewController+LoadSaveAnchors.swift"; sourceTree = "<group>"; };
@@ -71,6 +76,7 @@
 		E16665E823F6986F001B415F = {
 			isa = PBXGroup;
 			children = (
+				72F7D5F8279AFE8E00924477 /* Arnold Circus 20211217 1454 - AC Bandstand 2.mov */,
 				0095D1F5CE88A3E76098BA28 /* README.md */,
 				E16665F323F6986F001B415F /* GeoTrackingExample */,
 				E16665F223F6986F001B415F /* Products */,
@@ -97,9 +103,11 @@
 				E182A57823FD8B160052D70C /* Utilities.swift */,
 				E110381C24054CD10027DC8A /* GPXExporter.swift */,
 				E110381E24054D720027DC8A /* GPXParser.swift */,
+				72F7D5F6279AF5A700924477 /* Speaker.swift */,
 				E1F282972412709F000184D7 /* GeoAnchorWithAssociatedData.swift */,
 				E16665FA23F6986F001B415F /* Main.storyboard */,
 				72F7D5F02799A6D100924477 /* msp-cb.mp3 */,
+				72F7D5F4279AEFBD00924477 /* msp-test.gpx */,
 				E16665FD23F69870001B415F /* Assets.xcassets */,
 				E16665FF23F69870001B415F /* LaunchScreen.storyboard */,
 				E166660223F69870001B415F /* Info.plist */,
@@ -177,6 +185,7 @@
 				E166660123F69870001B415F /* LaunchScreen.storyboard in Resources */,
 				E16665FE23F69870001B415F /* Assets.xcassets in Resources */,
 				72F7D5F12799A6D100924477 /* msp-cb.mp3 in Resources */,
+				72F7D5F5279AEFBD00924477 /* msp-test.gpx in Resources */,
 				E16665FC23F6986F001B415F /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -194,6 +203,7 @@
 				E1103821240552F20027DC8A /* ViewController+LoadSaveAnchors.swift in Sources */,
 				E110381F24054D730027DC8A /* GPXParser.swift in Sources */,
 				E182A57923FD8B160052D70C /* Utilities.swift in Sources */,
+				72F7D5F7279AF5A700924477 /* Speaker.swift in Sources */,
 				E110381D24054CD10027DC8A /* GPXExporter.swift in Sources */,
 				E16665F523F6986F001B415F /* AppDelegate.swift in Sources */,
 			);

@@ -8,7 +8,7 @@ Parser to import ARGeoAnchors from GPX files.
 import ARKit
 
 protocol GPXParserDelegate: AnyObject {
-    func parser(_ parser: GPXParser, didFinishParsingFileWithAnchors anchors: [ARGeoAnchor])
+    func parser(_ parser: GPXParser, didFinishParsingFileWithAnchors speakers: [Speaker])
 }
 
 class GPXParser: NSObject, XMLParserDelegate {
@@ -19,12 +19,12 @@ class GPXParser: NSObject, XMLParserDelegate {
     private var parser: XMLParser?
     
     // The data of the currently parsed geo anchor.
-    private var parsedGeoAnchorData = [String: String]()
+    private var parsedSpeakerData = [String: String]()
     
     // The textual content of the currently parsed element.
     private var currentElementText = ""
     
-    private var anchorsFoundInFile: [ARGeoAnchor] = []
+    private var speakersFoundInFile: [Speaker] = []
     
     init?(contentsOf url: URL) {
         guard let parser = XMLParser(contentsOf: url) else {
@@ -45,7 +45,7 @@ class GPXParser: NSObject, XMLParserDelegate {
         // Each waypoint element contains all data describing a new geo anchor,
         // so intialize a new dictionary to collect all of the anchor's data.
         if elementName.lowercased() == "wpt" {
-            parsedGeoAnchorData = attributeDict
+            parsedSpeakerData = attributeDict
         }
     }
     
@@ -54,19 +54,12 @@ class GPXParser: NSObject, XMLParserDelegate {
         let tag = elementName.lowercased()
         switch tag {
         case "wpt":
-            // Neither `ARGeoAnchor` nor the GPX file format require `name`, so set to empty string if it's nil.
-            let name = parsedGeoAnchorData["name"] ?? ""
-            // If the waypoint contained all required content, initialize the anchor from the collected data.
-            if let lat = Double(parsedGeoAnchorData["lat"] ?? ""),
-               let lon = Double(parsedGeoAnchorData["lon"] ?? "") {
-                let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-                let altitude = Double(parsedGeoAnchorData["ele"] ?? "")
-                let geoAnchor = ARGeoAnchor(name: name, coordinate: coordinate, altitude: altitude)
-                anchorsFoundInFile.append(geoAnchor)
-            }
+            speakersFoundInFile.append(
+                Speaker(parsedSpeakerData)
+            )
         default:
             // For elements other than waypoints, save their content in the dictionary.
-            parsedGeoAnchorData[tag] = currentElementText.trimmingCharacters(in: .whitespacesAndNewlines)
+            parsedSpeakerData[tag] = currentElementText.trimmingCharacters(in: .whitespacesAndNewlines)
             currentElementText = ""
         }
     }
@@ -76,6 +69,6 @@ class GPXParser: NSObject, XMLParserDelegate {
     }
     
     func parserDidEndDocument(_ parser: XMLParser) {
-        delegate?.parser(self, didFinishParsingFileWithAnchors: anchorsFoundInFile)
+        delegate?.parser(self, didFinishParsingFileWithAnchors: speakersFoundInFile)
     }
 }

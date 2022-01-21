@@ -120,7 +120,7 @@ extension ViewController: GPXParserDelegate {
     
     // MARK: - GPXParserDelegate
     
-    func parser(_ parser: GPXParser, didFinishParsingFileWithAnchors anchors: [ARGeoAnchor]) {
+    func parser(_ parser: GPXParser, didFinishParsingFileWithAnchors speakers: [Speaker]) {
         
         // Don't add geo anchors if geotracking isn't sure yet where the user is.
         guard isGeoTrackingLocalized else {
@@ -128,15 +128,15 @@ extension ViewController: GPXParserDelegate {
             return
         }
         
-        if anchors.isEmpty {
+        if speakers.isEmpty {
             alertUser(withTitle: "No anchors added", message: "GPX file does not contain anchors or is invalid.")
             return
         }
         
-        for anchor in anchors {
-            addGeoAnchor(anchor)
+        for speaker in speakers {
+            addGeoAnchor(speaker.geoAnchor)
         }
         
-        showToast("\(anchors.count) anchor(s) added.")
+        showToast("\(speakers.count) speakers(s) added.")
     }
 }
