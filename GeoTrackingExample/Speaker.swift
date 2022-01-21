@@ -28,12 +28,12 @@ class Speaker {
         self.lat = Double(config["lat"]!)!
         self.lon = Double(config["lon"]!)!
         self.ele = Double(config["ele"]!)!
-        self.audioFile = config["audiofile"]!
+        self.audioFile = config["audiofile"] ?? "msp-cb.mp3"
         
-        self.color = UIColor(red: Double(config["r"]!)!,
-                             green: Double(config["g"]!)!,
-                             blue: Double(config["b"]!)!,
-                             alpha: Double(config["a"]!)!
+        self.color = UIColor(red:   Double(config["r"] ?? "0.0")!,
+                             green: Double(config["g"] ?? "0.0")!,
+                             blue:  Double(config["b"] ?? "0.1")!,
+                             alpha: Double(config["a"] ?? "0.7")!
         )
         
         self.geoAnchor = ARGeoAnchor(
