@@ -3,7 +3,7 @@
   <wpt lat="51.526340" lon="-0.074786">
     <ele>16.76348877</ele>
     <name>outer-bandstand-opposite-hocker-st</name>
-    <audioFile>msp-cb</audioFile>
+    <audioFile>msp-cb.mp3</audioFile>
     <color>
       <r>0.0</r>
       <g>0.0</g>
@@ -14,7 +14,7 @@
   <wpt lat="51.526060" lon="-0.074908">
     <ele>16.76348877</ele>
     <name>bandstand</name>
-    <audioFile>msp-cb</audioFile>
+    <audioFile>msp-cb.mp3</audioFile>
     <color>
       <r>0.0</r>
       <g>1.0</g>

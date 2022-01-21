@@ -135,6 +135,7 @@ extension ViewController: GPXParserDelegate {
         
         for speaker in speakers {
             addGeoAnchor(speaker.geoAnchor)
+            self.speakers[speaker.name] = speaker
         }
         
         showToast("\(speakers.count) speakers(s) added.")

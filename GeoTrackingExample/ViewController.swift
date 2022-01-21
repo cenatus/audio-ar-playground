@@ -31,6 +31,8 @@ class ViewController: UIViewController, ARSessionDelegate, CLLocationManagerDele
     // Geo anchors ordered by the time of their addition to the scene.
     var geoAnchors: [GeoAnchorWithAssociatedData] = []
     
+    var speakers: [String: Speaker] = [:]
+    
     // Auto-hide the home indicator to maximize immersion in AR experiences.
     override var prefersHomeIndicatorAutoHidden: Bool {
         return true
@@ -180,6 +182,7 @@ class ViewController: UIViewController, ARSessionDelegate, CLLocationManagerDele
         geoTrackingConfig.planeDetection = [.horizontal]
         arView.session.run(geoTrackingConfig, options: .removeExistingAnchors)
         geoAnchors.removeAll()
+        speakers.removeAll()
         
         arView.scene.anchors.removeAll()
         
@@ -245,8 +248,11 @@ class ViewController: UIViewController, ARSessionDelegate, CLLocationManagerDele
             // Effect a spatial-based delay to avoid blocking the main thread.
             DispatchQueue.main.asyncAfter(deadline: .now() + (distanceFromDevice(geoAnchor.coordinate) / 10)) {
                 // Add an AR placemark visualization for the geo anchor.
-                self.arView.scene.addAnchor(Entity.placemarkEntity(for: geoAnchor))
-                self.play(geoAnchor: geoAnchor)
+                self.arView.scene.addAnchor(
+                    Entity.placemarkEntity(for: geoAnchor)
+                )
+                let speaker = self.speakers[geoAnchor.name!]
+                self.play(speaker!)
             }
             // Add a visualization for the geo anchor in the map view.
             let anchorIndicator = AnchorIndicator(center: geoAnchor.coordinate)
@@ -305,12 +311,16 @@ class ViewController: UIViewController, ARSessionDelegate, CLLocationManagerDele
         self.trackingStateLabel.text = text
     }
     
-    func play(geoAnchor: ARGeoAnchor) {
-        let audio1 = try! AudioFileResource.load(named: "msp-cb.mp3")
-        audio1.shouldLoop = true
-        let entity = AnchorEntity(anchor: geoAnchor)
+    func play(_ speaker: Speaker) {
+        let audio = try! AudioFileResource.load(named: speaker.audioFile)
+        audio.shouldLoop = true
+        let entity = AnchorEntity(anchor: speaker.geoAnchor)
         self.arView.scene.addAnchor(entity)
-        entity.playAudio(audio1)
+
+        let playbackController = entity.prepareAudio(audio)
+        playbackController.speed = Double.random(in: 0.1..<1)
+        playbackController.gain = 0.9
+        playbackController.play()
     }
 
         
